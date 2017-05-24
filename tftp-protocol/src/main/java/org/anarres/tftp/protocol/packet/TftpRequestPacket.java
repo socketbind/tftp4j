@@ -4,13 +4,14 @@
  */
 package org.anarres.tftp.protocol.packet;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import java.nio.ByteBuffer;
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+import java.nio.ByteBuffer;
 
 /**
  *
@@ -84,7 +85,7 @@ public abstract class TftpRequestPacket extends TftpPacket {
     }
 
     @Override
-    protected Objects.ToStringHelper toStringHelper() {
+    protected MoreObjects.ToStringHelper toStringHelper() {
         return super.toStringHelper()
                 .add("filename", getFilename())
                 .add("mode", getMode())

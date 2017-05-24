@@ -4,11 +4,12 @@
  */
 package org.anarres.tftp.protocol.resource;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.io.Resources;
+
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URL;
-import javax.annotation.Nonnull;
 
 /**
  *
@@ -34,7 +35,7 @@ public class TftpResourceDataProvider extends AbstractTftpDataProvider {
 
     @Nonnull
     public ClassLoader getClassLoader() {
-        return Objects.firstNonNull(
+        return MoreObjects.firstNonNull(
                 Thread.currentThread().getContextClassLoader(),
                 getClass().getClassLoader());
     }

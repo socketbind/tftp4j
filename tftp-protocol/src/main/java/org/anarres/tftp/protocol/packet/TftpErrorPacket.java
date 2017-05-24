@@ -4,7 +4,8 @@
  */
 package org.anarres.tftp.protocol.packet;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
+
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
@@ -65,7 +66,7 @@ public class TftpErrorPacket extends TftpPacket {
     }
 
     @Override
-    protected Objects.ToStringHelper toStringHelper() {
+    protected MoreObjects.ToStringHelper toStringHelper() {
         return super.toStringHelper().add("errorCode", getErrorCode()).add("errorMessage", getErrorMessage());
     }
 }

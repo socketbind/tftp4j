@@ -5,13 +5,14 @@
 package org.anarres.tftp.protocol.packet;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
 
 /**
  *
@@ -42,8 +43,8 @@ public abstract class TftpPacket {
     public abstract TftpOpcode getOpcode();
 
     @Nonnull
-    protected Objects.ToStringHelper toStringHelper() {
-        return Objects.toStringHelper(this).add("opcode", getOpcode());
+    protected MoreObjects.ToStringHelper toStringHelper() {
+        return MoreObjects.toStringHelper(this).add("opcode", getOpcode());
     }
 
     public void toWire(@Nonnull ByteBuffer buffer) {

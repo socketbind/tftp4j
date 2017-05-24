@@ -43,12 +43,14 @@ public abstract class AbstractTftpReadTransfer<TftpTransferContext> extends Abst
     @GuardedBy("lock")
     private int recvRetry = 0;
     private final Object lock = new Object();
+    private final TftpOAckPacket oackPacket;
 
-    public AbstractTftpReadTransfer(@Nonnull SocketAddress remoteAddress, @Nonnull TftpData source, @Nonnegative int blockSize) throws IOException {
+    public AbstractTftpReadTransfer(@Nonnull SocketAddress remoteAddress, @Nonnull TftpData source, @Nonnegative int blockSize, TftpOAckPacket oackPacket) throws IOException {
         super(remoteAddress);
         this.source = source;
         this.blockSize = blockSize;
         this.blockCount = IntMath.divide(source.getSize() + 1, blockSize, RoundingMode.CEILING);
+        this.oackPacket = oackPacket;
     }
 
     @Nonnull
@@ -107,7 +109,11 @@ public abstract class AbstractTftpReadTransfer<TftpTransferContext> extends Abst
 
     @Override
     public void open(@Nonnull TftpTransferContext context) throws Exception {
-        ack(context, -1);
+        if (oackPacket == null) {
+            ack(context, -1);
+        } else {
+            send(context, oackPacket);
+        }
         flush(context);
     }
 

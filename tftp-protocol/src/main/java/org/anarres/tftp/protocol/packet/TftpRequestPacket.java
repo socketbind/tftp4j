@@ -23,6 +23,9 @@ public abstract class TftpRequestPacket extends TftpPacket {
     private String filename;
     private TftpMode mode;
     private int blockSize = TftpDataPacket.BLOCK_SIZE;
+    private boolean blockSizeOptionPresent = false;
+    private int timeout = 5;
+    private boolean timeoutOptionPresent = false;
 
     public String getFilename() {
         return filename;
@@ -49,6 +52,22 @@ public abstract class TftpRequestPacket extends TftpPacket {
         this.blockSize = blockSize;
     }
 
+    public boolean isBlockSizeOptionPresent() {
+        return blockSizeOptionPresent;
+    }
+
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    public boolean isTimeoutOptionPresent() {
+        return timeoutOptionPresent;
+    }
+
     @Override
     public void toWire(ByteBuffer buffer) {
         super.toWire(buffer);
@@ -67,15 +86,17 @@ public abstract class TftpRequestPacket extends TftpPacket {
             while (buffer.hasRemaining()) {
                 String word = getString(buffer);
                 if ("blksize".equalsIgnoreCase(word)) {
+                    blockSizeOptionPresent = true;
                     blockSize = Integer.parseInt(getString(buffer));
                     // TODO: Assert blockSize < 16K for safety.
                 } else if ("timeout".equalsIgnoreCase(word)) {
-                    // Skip a word.
-                    LOG.error("Unhandled TFTP timeout");
+                    timeoutOptionPresent = true;
+                    timeout = Integer.parseInt(getString(buffer));
                 } else if ("tsize".equalsIgnoreCase(word)) {
-                    // Skip a word.
+                    skipString(buffer);
                     LOG.error("Unhandled TFTP tsize");
                 } else {
+                    skipString(buffer);
                     LOG.error("Unknown TFTP command word " + word);
                 }
             }
@@ -89,6 +110,9 @@ public abstract class TftpRequestPacket extends TftpPacket {
         return super.toStringHelper()
                 .add("filename", getFilename())
                 .add("mode", getMode())
-                .add("blockSize", getBlockSize());
+                .add("blockSize", getBlockSize())
+                .add("blockSizeOptionPresent", isBlockSizeOptionPresent())
+                .add("timeout", getTimeout())
+                .add("timeoutOptionPresent", isTimeoutOptionPresent());
     }
 }

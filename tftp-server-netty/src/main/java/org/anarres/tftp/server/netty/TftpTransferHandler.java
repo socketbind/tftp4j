@@ -7,13 +7,15 @@ package org.anarres.tftp.server.netty;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.util.ReferenceCountUtil;
-import java.io.IOException;
-import javax.annotation.Nonnull;
 import org.anarres.tftp.protocol.engine.TftpTransfer;
 import org.anarres.tftp.protocol.packet.TftpPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
 
 /**
  *
@@ -44,11 +46,6 @@ public class TftpTransferHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        transfer.timeout(ctx.channel());
-    }
-
-    @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         transfer.close(ctx.channel());
         super.channelUnregistered(ctx);
@@ -56,7 +53,12 @@ public class TftpTransferHandler extends ChannelDuplexHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOG.error("Error on channel: " + cause, cause);
-        ctx.close();
+        if (cause instanceof ReadTimeoutException) {
+            LOG.error("Read timeout");
+            transfer.timeout(ctx.channel());
+        } else {
+            LOG.error("Error on channel: " + cause, cause);
+            ctx.close();
+        }
     }
 }

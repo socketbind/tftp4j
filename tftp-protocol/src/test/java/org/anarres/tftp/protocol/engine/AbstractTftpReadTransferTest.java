@@ -5,11 +5,6 @@
 package org.anarres.tftp.protocol.engine;
 
 import com.google.common.primitives.Chars;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import org.anarres.tftp.protocol.packet.TftpAckPacket;
 import org.anarres.tftp.protocol.packet.TftpDataPacket;
 import org.anarres.tftp.protocol.packet.TftpPacket;
@@ -18,7 +13,15 @@ import org.anarres.tftp.protocol.resource.TftpData;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -31,7 +34,7 @@ public class AbstractTftpReadTransferTest {
     private static class TftpReadTransfer extends AbstractTftpReadTransfer<List<TftpPacket>> {
 
         public TftpReadTransfer(TftpData source, int blockSize) throws IOException {
-            super(new InetSocketAddress(1046), source, blockSize);
+            super(new InetSocketAddress(1046), source, blockSize, null);
         }
 
         @Override

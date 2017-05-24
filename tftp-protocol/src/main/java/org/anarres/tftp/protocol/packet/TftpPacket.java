@@ -81,6 +81,14 @@ public abstract class TftpPacket {
         return new String(bytes, CHARSET);
     }
 
+    protected static void skipString(@Nonnull ByteBuffer buffer) {
+        while (buffer.position() < buffer.limit()) {
+            if (buffer.get() == 0) {
+                return;
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return toStringHelper().toString();

@@ -4,13 +4,8 @@
  */
 package org.anarres.tftp.server.mina;
 
-import java.net.SocketAddress;
-import javax.annotation.Nonnull;
 import org.anarres.tftp.protocol.engine.TftpTransfer;
-import org.anarres.tftp.protocol.packet.TftpErrorCode;
-import org.anarres.tftp.protocol.packet.TftpErrorPacket;
-import org.anarres.tftp.protocol.packet.TftpPacket;
-import org.anarres.tftp.protocol.packet.TftpRequestPacket;
+import org.anarres.tftp.protocol.packet.*;
 import org.anarres.tftp.protocol.resource.TftpData;
 import org.anarres.tftp.protocol.resource.TftpDataProvider;
 import org.apache.mina.core.future.ConnectFuture;
@@ -21,6 +16,9 @@ import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioDatagramConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import java.net.SocketAddress;
 
 /**
  *
@@ -50,8 +48,24 @@ public class TftpServerProtocolHandler extends IoHandlerAdapter {
                     session.write(new TftpErrorPacket(address, TftpErrorCode.FILE_NOT_FOUND), address);
                     session.close(false);
                 } else {
+                    TftpOAckPacket oack = null;
+
+                    if (request.isBlockSizeOptionPresent() || request.isTimeoutOptionPresent()) {
+                        oack = new TftpOAckPacket();
+
+                        if (request.isBlockSizeOptionPresent()) {
+                            oack.setBlockSize(request.getBlockSize());
+                        }
+
+                        if (request.isTimeoutOptionPresent()) {
+                            oack.setTimeout(request.getTimeout());
+                        }
+
+                        oack.setRemoteAddress(packet.getRemoteAddress());
+                    }
+
                     final NioDatagramConnector connector = new NioDatagramConnector();
-                    TftpTransfer transfer = new TftpReadTransfer(address, source, request.getBlockSize());
+                    TftpTransfer transfer = new TftpReadTransfer(address, source, request.getBlockSize(), oack);
                     TftpTransferProtocolHandler handler = new TftpTransferProtocolHandler(connector, transfer);
                     connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(new TftpProtocolCodecFactory()));
                     connector.getFilterChain().addLast("logger-packet", new LoggingFilter("tftp-transfer-packet"));

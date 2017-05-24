@@ -8,17 +8,16 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.ReferenceCountUtil;
-import javax.annotation.Nonnull;
 import org.anarres.tftp.protocol.engine.TftpTransfer;
-import org.anarres.tftp.protocol.packet.TftpErrorCode;
-import org.anarres.tftp.protocol.packet.TftpErrorPacket;
-import org.anarres.tftp.protocol.packet.TftpPacket;
-import org.anarres.tftp.protocol.packet.TftpRequestPacket;
+import org.anarres.tftp.protocol.packet.*;
 import org.anarres.tftp.protocol.resource.TftpData;
 import org.anarres.tftp.protocol.resource.TftpDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 /**
  *
@@ -29,10 +28,12 @@ public class TftpServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(TftpServerHandler.class);
     private final TftpPipelineInitializer.SharedHandlers sharedHandlers;
     private final TftpDataProvider provider;
+    private final int timeoutSeconds;
 
-    public TftpServerHandler(@Nonnull TftpPipelineInitializer.SharedHandlers sharedHandlers, @Nonnull TftpDataProvider provider) {
+    public TftpServerHandler(@Nonnull TftpPipelineInitializer.SharedHandlers sharedHandlers, @Nonnull TftpDataProvider provider, int timeoutSeconds) {
         this.sharedHandlers = sharedHandlers;
         this.provider = provider;
+        this.timeoutSeconds = timeoutSeconds;
     }
 
     @Override
@@ -47,27 +48,36 @@ public class TftpServerHandler extends ChannelInboundHandlerAdapter {
                     TftpData source = provider.open(request.getFilename());
                     if (source == null) {
                         ctx.writeAndFlush(new TftpErrorPacket(packet.getRemoteAddress(), TftpErrorCode.FILE_NOT_FOUND), ctx.voidPromise());
-                        // ctx.writeAndFlush(new TftpErrorPacket(packet.getRemoteAddress(), TftpErrorCode.FILE_NOT_FOUND)).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
                     } else {
-                        TftpTransfer<Channel> transfer = new TftpReadTransfer(packet.getRemoteAddress(), source, request.getBlockSize());
+                        TftpOAckPacket oack = null;
+
+                        if (request.isBlockSizeOptionPresent() || request.isTimeoutOptionPresent()) {
+                            oack = new TftpOAckPacket();
+
+                            if (request.isBlockSizeOptionPresent()) {
+                                oack.setBlockSize(request.getBlockSize());
+                            }
+
+                            if (request.isTimeoutOptionPresent()) {
+                                oack.setTimeout(request.getTimeout());
+                            }
+
+                            oack.setRemoteAddress(packet.getRemoteAddress());
+                        }
+
+                        TftpTransfer<Channel> transfer = new TftpReadTransfer(packet.getRemoteAddress(), source, request.getBlockSize(), oack);
+
                         Bootstrap bootstrap = new Bootstrap()
                                 .group(ctx.channel().eventLoop())
                                 .channel(channel.getClass())
-                                // .localAddress(new InetSocketAddress(0))
-                                // .remoteAddress(packet.getRemoteAddress())
-                                .handler(new TftpPipelineInitializer(sharedHandlers, new TftpTransferHandler(transfer)));
-                        bootstrap.connect(packet.getRemoteAddress());/*.addListener(new ChannelFutureListener() {
-                         @Override
-                         public void operationComplete(ChannelFuture future) throws Exception {
-                         LOG.info("Connected for " + packet);
-                         }
-                         });*/
+                                .handler(new TftpPipelineInitializer(sharedHandlers, new ReadTimeoutHandler(request.isTimeoutOptionPresent() ? request.getTimeout() : timeoutSeconds), new TftpTransferHandler(transfer)));
 
+                        bootstrap.connect(packet.getRemoteAddress());
                     }
+
                     break;
                 }
                 case WRQ: {
-                    // LOG.warn("Unexpected TFTP " + packet.getOpcode() + " packet: " + packet);
                     ctx.writeAndFlush(new TftpErrorPacket(packet.getRemoteAddress(), TftpErrorCode.PERMISSION_DENIED), ctx.voidPromise());
                     break;
                 }
@@ -105,6 +115,5 @@ public class TftpServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         LOG.error("Error on channel: " + cause, cause);
-        // LOG.error("Reported here: " + cause, new Exception("Here"));
     }
 }

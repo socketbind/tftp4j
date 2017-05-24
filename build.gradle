@@ -18,7 +18,7 @@ subprojects {
 		license 'Apache-2.0'
 	}
 
-	sourceCompatibility = 1.5
+	sourceCompatibility = 1.8
 	animalsniffer {
 		signature = "org.codehaus.mojo.signature:java16:+@signature"
 	}
@@ -28,6 +28,7 @@ project(':tftp-protocol') {
 	dependencies {
 		compile 'com.google.code.findbugs:annotations:2.0.3'
 		compile 'org.slf4j:slf4j-api:1.7.12'
+		compile 'org.slf4j:slf4j-log4j12:1.7.12'
 		compile 'com.google.guava:guava:18.0'
 		compile 'org.codehaus.mojo:animal-sniffer-annotations:1.14'
 
@@ -48,7 +49,7 @@ project(':tftp-server-mina') {
 project(':tftp-server-netty') {
 	dependencies {
 		compile project(':tftp-protocol')
-		compile 'io.netty:netty-all:4.0.23.Final'
+		compile 'io.netty:netty-all:4.1.11.Final'
 
 		testCompile 'commons-net:commons-net:3.3'
 		testCompile project(':tftp-protocol').sourceSets.test.output
